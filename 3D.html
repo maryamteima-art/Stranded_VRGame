@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>user click Test</title>
+        <meta charset="utf-8" />
+        <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+        <!--Environment Addon-->
+        <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+        <!--Virtual Joystick Addon-->
+        <script src="https://cdn.rawgit.com/mrturck/aframe-joystick/master/joystick.min.js"></script>
+        <!--Gesture Controls Addon (for tapping on mobile)-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    </head>
+
+    <body>
+        <!--AUDIO OUTPUTS-->
+        <a-assets>
+            <audio id="grabSound" src="pop.ogg"></audio>
+            <audio id="dropSound" src="pop.ogg"></audio>
+            <audio id="backgroundMusic" src="bg.mp3" autoplay loop></audio>
+        </a-assets>
+        <audio autoplay loop>
+            <source src="path/to/your-audio-file.mp3" type="audio/mp3">
+            Your browser does not support the audio element.
+        </audio>
+        <a-scene joystick background="color:rgb(0, 0, 0);">
+
+            <!--MOBILE & DESKTOP CONTROLS-->
+            <!--Wasd-controls, and look-controls for desktop. "Camera Id + joystick keyword in scene is mobile controls"-->
+            <a-entity camera id="camera" position="0 1.6 0" look-controls wasd-controls>
+                <a-text id="grabStatus" value="Grab an item!" position="-0.3 -0.5 -1" width="2" color="white"></a-text>
+            </a-entity>
+            
+            <!--Environment Addon-->
+            <a-entity environment="preset: goaland;"></a-entity>
+            
+            <!--Procedural Generation via in-line script-->
+              <!--Procedural Generation in seperate Js didn't work for some reason, 
+                so I opted to do it inline, and it worked...so now my code will 
+                be inline JS in HTML for this assignment-->
+        <script>
+            window.onload = function() {
+                // Reference to the scene
+                var scene = document.querySelector('a-scene'); 
+                //Random Generation of Circles from 3-6
+                var numCircles = Math.floor((Math.random() * 6) + 3);
+
+                //Interactivity Attributes
+                //Holds all currently grabbed objects (array for more items)
+                var grabbedObjects = [];
+                var player = document.querySelector('[camera]');
+                var grabStatusText = document.querySelector('#grabStatus'); 
+                //How many items collected
+                var itemsCount = 0;
+                //Track how many spheres have been placed in pillars
+                var spheresPlaced = 0; 
+                
+                //Distance between two objects in 3D space (for Camera vs Spheres)
+                function getDist(obj) {
+                    //Creaate empty vectors to store positions
+                    var playerPosition = new THREE.Vector3();
+                    var objPosition = new THREE.Vector3();
+                    //Get object position from world coordinates
+                    obj.object3D.getWorldPosition(objPosition);
+                    //Get player position (camera)
+                    document.querySelector('[camera]').object3D.getWorldPosition(playerPosition);
+                    return playerPosition.distanceTo(objPosition);
+                }
+
+                //Function to find and grab the closest object
+                function grabClosestObj() {
+
+                    var shortesttDistance = Infinity;
+                    var closestObj = null;
+                    //Searching through all grabbable objects to determine item to grab
+                    document.querySelectorAll('.grabbable').forEach(function(obj) {
+                        var distance = getDist(obj);
+                        //Grab Radius is set to 10 (hardcoded/tested value)
+                        if (distance < shortesttDistance && distance < 2) { 
+                            //Update closest distance to grabbed object distance 
+                            shortestDistance = distance;
+                            closestObj = obj;
+                            console.log('Grabbed an object');
+                        }
+                });
+
+                //If item's detected in list 
+                if (closestObj) {
+                    // Add to grabbed objects
+                    grabbedObjects.push(closestObj); 
+                    //Hide object to avoid recollecting
+                    closestObj.setAttribute('visible', 'false'); 
+                    //Update UI/counters for Grabbed Feedback to player
+                    grabStatusText.setAttribute('value', 'Item grabbed!\n Total: ' + grabbedObjects.length);
+                }
+            }
+
+                //Dropping Function
+                 function dropObj() {
+                    if (grabbedObjects.length > 0) {
+                        //Remove last-grabbed object
+                        var objToDrop = grabbedObjects.pop(); 
+                        //Make item visible again
+                        objToDrop.setAttribute('visible', 'true'); 
+                        // Get the current position of the camera
+                        var camera = document.querySelector('[camera]');
+                        var currentPos = camera.getAttribute('position');
+                        //Drop object at current position
+                        objToDrop.setAttribute('position', currentPos); 
+                        grabStatusText.setAttribute('value', 'Dropped an item. \nRemaining: ' + grabbedObjects.length);
+                        //Checking all collisions of all sphere's to initiate winCheck()
+                        checkAllSpheresForCollision();
+                    } else {
+                        //If list's empty
+                        grabStatusText.setAttribute('value', 'No items to drop.');
+                    }
+                }
+            
+
+                //---------- PROCEDURAL GENERATION -------------
+                // Generate Random Entities
+                for (let i = 0; i < numCircles; i++) { 
+
+                    //Random color in Hexadecimal
+                    var color = `#${Math.floor(Math.random()*16777215).toString(16)}`;
+                    
+                    // Random position (x,y,z)
+                    //Subtracting 0.5 to shift the range to -0.5 and +0.5, Multiplying by 20 scales to -10 and +10.
+                    //Y is hardcoded to 1, to ensure it's always above ground
+                    var position = `${(Math.random() - 0.5) * 20} 1 ${(Math.random() - 0.5) * 20}`; 
+                    var position2 = `${(Math.random() - 0.5) * 20} 1 ${(Math.random() - 0.5) * 20}`; 
+                    
+                   
+                    
+                    //Creating Circles and Pillars
+                    var circle = document.createElement('a-sphere'); 
+                    var pillar = document.createElement('a-cylinder');
+                    
+                    //Mapping attributes to Circle & Pillar Entities
+                    circle.setAttribute('material', `color: ${color}; roughness: 0.2; metalness: 0.8; opacity: 0.98; transparent: true;`);
+                    circle.setAttribute('position', position);
+                    //For collision detection (circle with pillar)
+                    pillar.setAttribute('material', 'opacity: 0.5; side: double');
+                    pillar.setAttribute('position', position2);
+                    pillar.setAttribute('height', '2.5');
+                    pillar.setAttribute('radius', '0.5');
+                    pillar.setAttribute('class', 'pillar');
+                    
+                    //Shrinking Spheres
+                    circle.setAttribute('radius', '0.3');
+
+                    //ADDING INTERACTIVITY 
+                    circle.setAttribute('class', 'grabbable');
+                    //Storing initial position for dropping item
+                    circle.setAttribute('initialPos', position);
+
+                    
+                    //Adding the circles and pillars to the scene
+                    scene.appendChild(circle); 
+                    scene.appendChild(pillar);
+                }
+
+                //------ DESKTOP INTERACTION ------------
+                //Listen for spacebar to grab or drop
+                document.addEventListener('keydown', (event) => {
+                if (event.code === 'Space') {
+                    grabClosestObj();
+                    //Use 'X' key to drop
+                } else if (event.code === 'KeyX') { 
+                dropObj();
+                }
+                });
+                
+                //--------- MOBILE TAPPING INTERACTION ----------
+                //Setup Hammer.js on the A-Frame canvas
+                var canvas = document.querySelector('a-scene').canvas;
+                // Wait for the canvas to be loaded if it's not available immediately
+                if (!canvas) {
+                    document.querySelector('a-scene').addEventListener('loaded', setupGestures);
+                } else {
+                    setupGestures();
+                }
+
+                //------ GESTURE DETECTION --------
+                //Function to detect single tap or double tap, and perform corresponding action (grab and drop spheres)
+                function setupGestures() {
+                    //Creating Hammer Entity from canvas
+                    var hammer = new Hammer(document.querySelector('a-scene').canvas);
+                    //Settig up Taps (single for grab, double for drop)
+                    hammer.get('tap').set({taps: 1});
+                    //500 ms interval
+                    hammer.get('doubletap').set({taps: 2, interval: 500});
+                    var doubleTap = false;
+
+                    // Single tap
+                    hammer.on('tap', function () {
+                        console.log('Single tap detected');
+                        grabClosestObj();
+                    });
+
+                    // Double tap
+                    hammer.on('doubletap', function () {
+                        console.log('Double tap detected');
+                        doubleTap = true;
+                        dropObj();
+                        
+                        // Reset boolean after 500ms (to avoid simultaneous grabbing and dropping at the same time when double tapping)
+                        setTimeout(function() {
+                            doubleTap = false;
+                        }, 500);
+                    });
+                    }
+
+                //------- COLLISION DETECTION -----------
+                //For Spheres vs Pillars
+                //Only detecting Xpos and Zpos since height doesn't matter for this game
+                function checkCollision(sphere, pillar) {
+                    const spherePos = sphere.getAttribute('position');
+                    const pillarPos = pillar.getAttribute('position');
+                    const sphereRad = sphere.getAttribute('geometry').radius;
+                    const pillarRad = pillar.getAttribute('geometry').radius;
+                    const dist = distanceOnXZPlane(spherePos, pillarPos);
+                    const buffer = 0.5;
+                    //Radial collision detection (with buffer for leniency)
+                    return dist <= (sphereRad + pillarRad+buffer);
+                }
+
+                //Function to check all sphere's and pillars
+                function checkAllSpheresForCollision() {
+                    //Iterate over all spheres
+                    document.querySelectorAll('.grabbable').forEach(sphere => {
+                        //Iterate over all pillars
+                        document.querySelectorAll('.pillar').forEach(pillar => {
+                            //Check collision
+                            if (checkCollision(sphere, pillar)) {
+                                console.log('Collision detected between sphere and pillar');
+                                //If sphere hasn't been updated, update it's picked-up value (placed) and update counter
+                                if (!sphere.hasAttribute('placed')) {
+                                    sphere.setAttribute('placed', true);
+                                    spheresPlaced++;
+                                    //Initiate winCheck to see if player's won
+                                    winCheck();
+                                }
+                            }
+                        });
+                    });
+                }
+
+                //Using Euclidean Formula to find distance between objects
+                //For spheres vs pillars
+                //Formula referenced: PQ = d = √ [(x2 – x1)2 + (y2 – y1)2 + (z2 – z1)2].
+                function distanceOnXZPlane(pos1, pos2) {
+                    const dx = pos1.x - pos2.x;
+                    const dz = pos1.z - pos2.z;
+                    return Math.sqrt(dx * dx + dz * dz);
+                }
+
+            //----------- GAME STATES ------------
+            //Function to check if all spheres have been placed in pillars
+            function winCheck() {
+                //If all sphere's have been placed 
+                if (spheresPlaced === numCircles) {
+                    //Change window (teleport to new dimension)
+                    window.location.href = 'win.html';
+                }
+            }
+            };
+        </script>
+        </a-scene>
+    </body>
+</html>

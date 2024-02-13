@@ -1,0 +1,65 @@
+<html>
+    <head><title>Game Menu</title>
+        <meta charset="utf-8" />
+        <!--Changing Font-->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Coiny&display=swap" rel="stylesheet">
+
+    </head>
+    <body>
+        <style>
+             @keyframes colorCycle {
+            0% { background-color: #074772; }
+            25% { background-color: #50b750; } 
+            50% { background-color: #3d7294; } 
+            75% { background-color: hsl(300, 68%, 24%); } 
+            100% { background-color: #da4672; } 
+        }
+
+           body {
+            animation: colorCycle 100s infinite;
+            font-family: "Coiny", system-ui;
+            font-weight: 400;
+            font-style: normal;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-size: 4vw; 
+            }
+            .image-container {
+            position: relative;
+            width: 80%;
+            margin-top: 20px;
+            max-width: 100vh; 
+            }
+            .image-container img {
+                width: 100%;
+                height: auto;
+            }
+            ul {
+                list-style-type: none;
+                padding: 0;
+                text-align: center;
+            }
+            li {
+                margin: 10px 0;
+            }
+            a {
+                text-decoration: none;
+                color: #ffffff;
+            }
+
+        </style>
+        <div class="image-container">
+            <img src="play.png" alt="Storyline Image">
+            <ul>
+                <li><a href="/index.html">Back</a></li>
+                <li><a href="/3D.html">Start Game</a></li>
+            </ul>
+        </div>
+    </body>
+</html>
